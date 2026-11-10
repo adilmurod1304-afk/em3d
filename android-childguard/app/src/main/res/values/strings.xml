@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ChildGuard</string>
+
+    <!-- MainActivity -->
+    <string name="title_setup">Himoya sozlamalari</string>
+    <string name="btn_perms">1. Kamera va bildirishnoma ruxsati</string>
+    <string name="btn_overlay">2. Ustidan ko\'rinish ruxsati</string>
+    <string name="btn_enroll_parent">Ota-ona yuzini qo\'shish</string>
+    <string name="btn_enroll_child">Bola yuzini qo\'shish</string>
+    <string name="limit_label">Bola uchun ekran vaqti (daqiqa):</string>
+    <string name="btn_save_limit">Vaqtni saqlash</string>
+    <string name="pin_label">Ota-ona zaxira PIN (kamida 4 raqam):</string>
+    <string name="btn_save_pin">PIN saqlash</string>
+    <string name="guard_label">Himoyani yoqish</string>
+    <string name="status_title">Holat:</string>
+
+    <string name="perm_camera">Kamera ruxsati</string>
+    <string name="perm_overlay">Ustidan ko\'rinish ruxsati</string>
+    <string name="parent_faces">Ota-ona yuzlari: %1$d ta</string>
+    <string name="child_faces">Bola yuzlari: %1$d ta</string>
+
+    <string name="saved">Saqlandi</string>
+    <string name="enter_valid_minutes">To\'g\'ri daqiqa kiriting</string>
+    <string name="pin_min_len">PIN kamida 4 raqam bo\'lsin</string>
+    <string name="finish_setup_first">Avval ruxsatlar va yuzlarni to\'ldiring</string>
+
+    <!-- EnrollActivity -->
+    <string name="enroll_parent">Ota-ona yuzini ro\'yxatga olish</string>
+    <string name="enroll_child">Bola yuzini ro\'yxatga olish</string>
+    <string name="btn_capture">Namuna qo\'shish</string>
+    <string name="btn_clear">Tozalash</string>
+    <string name="btn_done">Tayyor</string>
+    <string name="samples_count">Saqlangan namunalar: %1$d ta</string>
+    <string name="no_frame">Kamera hali tayyor emas</string>
+    <string name="no_face_try_again">Yuz topilmadi, qayta urinib ko\'ring</string>
+    <string name="model_missing">Diqqat: yuz-tanish modeli (tflite) topilmadi. README\'ga qarang.</string>
+
+    <!-- LockActivity -->
+    <string name="locked_title">Telefon bloklandi</string>
+    <string name="locked_sub">Ekran vaqti tugadi. Ochish uchun ota-ona yuzini kameraga ko\'rsating.</string>
+    <string name="use_pin">Yoki PIN kiriting:</string>
+    <string name="btn_unlock_pin">Ochish</string>
+    <string name="wrong_pin">PIN noto\'g\'ri</string>
+    <string name="model_missing_pin_only">Model yo\'q — faqat PIN bilan ochiladi.</string>
+
+    <!-- Service -->
+    <string name="guard_running">Himoya yoqilgan — kuzatilmoqda</string>
+</resources>
