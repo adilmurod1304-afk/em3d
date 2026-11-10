@@ -1,9 +1,11 @@
 # ChildGuard — yuz orqali bola ekran vaqtini cheklovchi Android ilova
 
-Old kamera orqali kim telefondan foydalanayotganini aniqlaydi. Agar **bola**
-yuzi aniqlanib, uning foydalanishi belgilangan vaqtdan (masalan **30 daqiqa**)
-oshsa — telefon **bloklanadi**. Blokni faqat **ota-onaning yuzi** (yoki zaxira
-**PIN**) ochadi.
+Old kamera orqali kim telefondan foydalanayotganini aniqlaydi. **Bir nechta
+bola** profili qo'llab-quvvatlanadi — har biri alohida ism va yuz namunalariga,
+hamda **alohida kunlik vaqt hisobiga** ega. Agar biror **bola** yuzi aniqlanib,
+o'sha bolaning foydalanishi belgilangan vaqtdan (masalan **30 daqiqa**) oshsa —
+telefon **bloklanadi**. Blokni faqat **ota-onaning yuzi** (yoki zaxira **PIN**)
+ochadi. Blok ochilganda faqat o'sha bolaning hisobi nolga tushadi.
 
 > ⚠️ Bu **prototip / namuna loyiha**. Haqiqiy qurilmada sinab, aniqlikni sozlash
 > kerak. Tayyor APK emas — Android Studio'da yig'iladi.
@@ -12,26 +14,30 @@ oshsa — telefon **bloklanadi**. Blokni faqat **ota-onaning yuzi** (yoki zaxira
 
 ## Qanday ishlaydi
 
-1. **Ro'yxatga olish** — ota-ona va bola yuzlari bir necha marta kameraga olinadi.
-   Har bir yuz TFLite model yordamida son vektoriga (embedding) aylantiriladi.
+1. **Ro'yxatga olish** — ota-ona va har bir bola yuzi bir necha marta kameraga
+   olinadi. Har bir yuz TFLite model yordamida son vektoriga (embedding)
+   aylantiriladi. Bolalar sonida cheklov yo'q.
 2. **Kuzatuv** — fon xizmat (`MonitorService`) har 5 soniyada old kameradan kadr
-   oladi va kim ekanini aniqlaydi.
-3. **Hisob** — faqat **bola** aniqlanган soniyalar to'planadi (ota-ona yoki
-   noma'lum odam vaqtni oshirmaydi). Har kuni yarim tunda nolga tushadi.
-4. **Blok** — to'plangan vaqt chegaradan oshsa, `LockActivity` butun ekranni
-   egallaydi. Faqat ota-ona yuzi ketma-ket 2 marta tasdiqlansa yoki to'g'ri PIN
-   kiritilsa, blok ochiladi va hisob qaytadan boshlanadi.
+   oladi va kim ekanini (ota-ona yoki aynan qaysi bola) aniqlaydi.
+3. **Hisob** — aniqlangan bolaning soniyalari **o'sha bolaning** hisobiga
+   qo'shiladi (ota-ona yoki noma'lum odam hech kimning vaqtini oshirmaydi).
+   Har bir bola uchun alohida hisob yuritiladi va har kuni avtomatik nolga tushadi.
+4. **Blok** — biror bolaning vaqti chegaradan oshsa, `LockActivity` butun ekranni
+   egallaydi va qaysi bola ekanini ko'rsatadi. Faqat ota-ona yuzi ketma-ket
+   2 marta tasdiqlansa yoki to'g'ri PIN kiritilsa, blok ochiladi va **o'sha
+   bolaning** hisobi qaytadan boshlanadi.
 
 ## Komponentlar
 
 | Fayl | Vazifasi |
 |------|----------|
-| `MainActivity` | Ruxsatlar, yuzlarni qo'shish, vaqt/PIN sozlash, himoyani yoqish |
-| `EnrollActivity` | Ota-ona/bola yuzini namuna sifatida qo'shish |
-| `FaceRecognizer` | ML Kit (yuzni topish) + TFLite (embedding) + solishtirish |
-| `MonitorService` | Fon kamera kuzatuvi, vaqt hisobi, blokni ishga tushirish |
+| `MainActivity` | Ruxsatlar, bolalar ro'yxati (qo'shish/o'chirish), yuz qo'shish, vaqt/PIN, himoyani yoqish |
+| `EnrollActivity` | Ota-ona yoki aniq bir bola yuzini namuna sifatida qo'shish |
+| `FaceRecognizer` | ML Kit (yuzni topish) + TFLite (embedding) + kim ekanini aniqlash |
+| `MonitorService` | Fon kamera kuzatuvi, har bir bola vaqti hisobi, blokni ishga tushirish |
 | `LockActivity` | Blok ekrani — ota-ona yuzi yoki PIN bilan ochiladi |
-| `EmbeddingStore` / `Prefs` | Yuzlar va sozlamalarni saqlash |
+| `Profiles` | Ota-ona va bir nechta bola profillari (ism + yuz namunalari) |
+| `Prefs` | Sozlamalar va har bir bola uchun kunlik vaqt hisobi |
 
 ## Yig'ish (build)
 
@@ -53,9 +59,13 @@ Terminaldan (SDK o'rnatilgan bo'lsa):
 1. Ilovani oching → **1-tugma** bilan kamera/bildirishnoma ruxsatini bering.
 2. **2-tugma** bilan "ustidan ko'rinish" (overlay) ruxsatini yoqing.
 3. **Ota-ona yuzini qo'shish** → 3–5 marta "Namuna qo'shish" (har xil burchak/yorug'lik).
-4. **Bola yuzini qo'shish** → xuddi shunday.
-5. Vaqt chegarasini (daqiqa) va zaxira **PIN** ni saqlang.
+4. **Bola qo'shish** → ism kiriting → o'sha bola uchun 3–5 marta yuz namunasi oling.
+   Kerak bo'lsa yana bola qo'shing (nechta bo'lsa ham).
+5. Har bir bola uchun kunlik vaqt chegarasini (daqiqa) va zaxira **PIN** ni saqlang.
 6. **Himoyani yoqish** tugmasini bosing.
+
+> Har bir bola qatorida bugungi foydalanish (masalan `12/30 daq`), namunalar
+> soni ko'rsatiladi; "Yuz qo'shish" va "O'chirish" tugmalari bor.
 
 ## Muhim cheklovlar / ogohlantirish
 

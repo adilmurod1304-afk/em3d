@@ -39,8 +39,11 @@ class LockActivity : AppCompatActivity() {
             override fun handleOnBackPressed() { /* bloklangan */ }
         })
 
-        if (!recognizer.isModelLoaded) {
-            binding.status.text = getString(R.string.model_missing_pin_only)
+        val childName = Prefs.getLockedChildName(this)
+        binding.status.text = when {
+            !recognizer.isModelLoaded -> getString(R.string.model_missing_pin_only)
+            childName.isNotBlank() -> getString(R.string.locked_sub_named, childName)
+            else -> getString(R.string.locked_sub)
         }
 
         binding.pinButton.setOnClickListener {
@@ -105,8 +108,8 @@ class LockActivity : AppCompatActivity() {
 
     private fun checkParent(proxy: androidx.camera.core.ImageProxy) {
         if (!recognizer.isModelLoaded) return
-        val label = recognizer.recognize(proxy.toBitmap())
-        if (label == FaceRecognizer.Label.PARENT) {
+        val result = recognizer.recognize(proxy.toBitmap())
+        if (result.kind == FaceRecognizer.Kind.PARENT) {
             parentStreak++
             // Xatodan saqlanish uchun ketma-ket 2 marta tasdiqlansin
             if (parentStreak >= 2) {
@@ -121,7 +124,9 @@ class LockActivity : AppCompatActivity() {
         if (unlocking) return
         unlocking = true
         Prefs.setLocked(this, false)
-        Prefs.setUsedMillis(this, 0L)  // yangi ruxsat davri boshlanadi
+        // Sababchi bolaning hisobini nolga tushiramiz — yangi ruxsat davri.
+        val lockedId = Prefs.getLockedChildId(this)
+        if (lockedId.isNotBlank()) Prefs.resetChildUsed(this, lockedId)
         finish()
     }
 

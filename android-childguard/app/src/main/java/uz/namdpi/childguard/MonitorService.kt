@@ -12,7 +12,6 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
-import java.util.Calendar
 import java.util.concurrent.Executors
 
 /**
@@ -84,38 +83,28 @@ class MonitorService : LifecycleService() {
         if (!Prefs.isGuardEnabled(this)) return
         if (Prefs.isLocked(this)) return        // allaqachon bloklangan
 
-        resetIfNewDay()
-
         val bitmap = proxy.toBitmap()
-        val label = recognizer.recognize(bitmap)
+        val result = recognizer.recognize(bitmap)
 
-        if (label == FaceRecognizer.Label.CHILD) {
-            // O'tgan oraliqni (lekin ko'pi bilan TICK_MS) bola vaqtiga qo'shamiz
+        // Faqat aniq bir BOLA tanilsa — o'sha bolaning vaqtiga qo'shamiz.
+        if (result.kind == FaceRecognizer.Kind.CHILD && result.childId != null) {
             val delta = if (prevTick == 0L) TICK_MS else (now - prevTick).coerceAtMost(TICK_MS * 2)
-            val used = Prefs.getUsedMillis(this) + delta
-            Prefs.setUsedMillis(this, used)
+            Prefs.addChildUsedMillis(this, result.childId, delta)
 
             val limitMs = Prefs.getLimitMinutes(this) * 60_000L
-            if (used >= limitMs) {
-                lockNow()
+            if (Prefs.getChildUsedMillis(this, result.childId) >= limitMs) {
+                lockNow(result.childId, result.childName ?: "")
             }
         }
-        // PARENT / UNKNOWN / NO_FACE bo'lsa vaqt qo'shilmaydi.
+        // PARENT / UNKNOWN / NO_FACE bo'lsa hech kimning vaqti qo'shilmaydi.
     }
 
-    private fun lockNow() {
+    private fun lockNow(childId: String, childName: String) {
         Prefs.setLocked(this, true)
+        Prefs.setLockedChild(this, childId, childName)
         val i = Intent(this, LockActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(i)
-    }
-
-    private fun resetIfNewDay() {
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        if (Prefs.getUsedDay(this) != today) {
-            Prefs.setUsedDay(this, today)
-            Prefs.setUsedMillis(this, 0L)
-        }
     }
 
     private fun buildNotification(): Notification {

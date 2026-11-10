@@ -7,8 +7,18 @@
     <string name="btn_perms">1. Kamera va bildirishnoma ruxsati</string>
     <string name="btn_overlay">2. Ustidan ko\'rinish ruxsati</string>
     <string name="btn_enroll_parent">Ota-ona yuzini qo\'shish</string>
-    <string name="btn_enroll_child">Bola yuzini qo\'shish</string>
-    <string name="limit_label">Bola uchun ekran vaqti (daqiqa):</string>
+    <string name="children_header">Bolalar:</string>
+    <string name="btn_add_child">➕ Bola qo\'shish</string>
+    <string name="btn_enroll_samples">Yuz qo\'shish</string>
+    <string name="no_children_yet">Hali bola qo\'shilmagan</string>
+    <string name="child_row_info">%1$s — %2$d namuna · bugun %3$d/%4$d daq</string>
+    <string name="add_child_title">Yangi bola</string>
+    <string name="add_child_hint">Bola ismi</string>
+    <string name="btn_add">Qo\'shish</string>
+    <string name="remove_child_title">Bolani o\'chirish</string>
+    <string name="remove_child_msg">%1$s profilini o\'chirasizmi?</string>
+    <string name="children_total">Bolalar: %1$d ta</string>
+    <string name="limit_label">Har bir bola uchun kunlik vaqt (daqiqa):</string>
     <string name="btn_save_limit">Vaqtni saqlash</string>
     <string name="pin_label">Ota-ona zaxira PIN (kamida 4 raqam):</string>
     <string name="btn_save_pin">PIN saqlash</string>
@@ -27,9 +37,10 @@
 
     <!-- EnrollActivity -->
     <string name="enroll_parent">Ota-ona yuzini ro\'yxatga olish</string>
-    <string name="enroll_child">Bola yuzini ro\'yxatga olish</string>
+    <string name="enroll_child_named">Bola yuzi: %1$s</string>
     <string name="btn_capture">Namuna qo\'shish</string>
     <string name="btn_clear">Tozalash</string>
+    <string name="btn_remove">O\'chirish</string>
     <string name="btn_done">Tayyor</string>
     <string name="samples_count">Saqlangan namunalar: %1$d ta</string>
     <string name="no_frame">Kamera hali tayyor emas</string>
@@ -39,6 +50,7 @@
     <!-- LockActivity -->
     <string name="locked_title">Telefon bloklandi</string>
     <string name="locked_sub">Ekran vaqti tugadi. Ochish uchun ota-ona yuzini kameraga ko\'rsating.</string>
+    <string name="locked_sub_named">%1$s ning ekran vaqti tugadi. Ochish uchun ota-ona yuzini kameraga ko\'rsating.</string>
     <string name="use_pin">Yoki PIN kiriting:</string>
     <string name="btn_unlock_pin">Ochish</string>
     <string name="wrong_pin">PIN noto\'g\'ri</string>

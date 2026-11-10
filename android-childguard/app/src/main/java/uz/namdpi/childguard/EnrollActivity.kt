@@ -14,8 +14,9 @@ import uz.namdpi.childguard.databinding.ActivityEnrollBinding
 import java.util.concurrent.Executors
 
 /**
- * Yuzni ro'yxatdan o'tkazish. Intent orqali "role" (parent/child) keladi.
- * Foydalanuvchi bir necha marta "Qo'shish" bosib, har xil burchakdan namuna oladi.
+ * Yuzni ro'yxatdan o'tkazish.
+ * Intent orqali EXTRA_ROLE ("parent" yoki "child") keladi; "child" bo'lsa
+ * EXTRA_CHILD_ID ham keladi (qaysi bola profili ekani).
  */
 class EnrollActivity : AppCompatActivity() {
 
@@ -23,19 +24,25 @@ class EnrollActivity : AppCompatActivity() {
     private lateinit var recognizer: FaceRecognizer
     private val exec = Executors.newSingleThreadExecutor()
     @Volatile private var lastBitmap: Bitmap? = null
-    private lateinit var role: String
+
+    private var isParent = true
+    private var childId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEnrollBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        role = intent.getStringExtra(EXTRA_ROLE) ?: EmbeddingStore.ROLE_PARENT
+        isParent = intent.getStringExtra(EXTRA_ROLE) != ROLE_CHILD
+        childId = intent.getStringExtra(EXTRA_CHILD_ID) ?: ""
         recognizer = FaceRecognizer(this)
 
-        val title = if (role == EmbeddingStore.ROLE_PARENT)
-            getString(R.string.enroll_parent) else getString(R.string.enroll_child)
-        binding.title.text = title
+        binding.title.text = if (isParent) {
+            getString(R.string.enroll_parent)
+        } else {
+            val name = Profiles.getChild(this, childId)?.name ?: ""
+            getString(R.string.enroll_child_named, name)
+        }
         updateCount()
 
         if (!recognizer.isModelLoaded) {
@@ -44,7 +51,8 @@ class EnrollActivity : AppCompatActivity() {
 
         binding.captureButton.setOnClickListener { captureSample() }
         binding.clearButton.setOnClickListener {
-            EmbeddingStore.clear(this, role)
+            if (isParent) Profiles.clearParent(this)
+            else Profiles.clearChildSamples(this, childId)
             updateCount()
         }
         binding.doneButton.setOnClickListener { finish() }
@@ -94,7 +102,8 @@ class EnrollActivity : AppCompatActivity() {
                 if (emb == null) {
                     Toast.makeText(this, R.string.no_face_try_again, Toast.LENGTH_SHORT).show()
                 } else {
-                    EmbeddingStore.add(this, role, emb)
+                    if (isParent) Profiles.addParentSample(this, emb)
+                    else Profiles.addChildSample(this, childId, emb)
                     updateCount()
                 }
             }
@@ -102,7 +111,8 @@ class EnrollActivity : AppCompatActivity() {
     }
 
     private fun updateCount() {
-        val n = EmbeddingStore.count(this, role)
+        val n = if (isParent) Profiles.parentCount(this)
+        else Profiles.childSampleCount(this, childId)
         binding.count.text = getString(R.string.samples_count, n)
         binding.doneButton.isEnabled = n > 0
     }
@@ -116,5 +126,8 @@ class EnrollActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "EnrollActivity"
         const val EXTRA_ROLE = "role"
+        const val EXTRA_CHILD_ID = "child_id"
+        const val ROLE_PARENT = "parent"
+        const val ROLE_CHILD = "child"
     }
 }

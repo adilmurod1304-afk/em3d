@@ -16,20 +16,27 @@ import kotlin.math.sqrt
 /**
  * Yuzni tanib oluvchi.
  * 1) ML Kit yordamida rasmdan eng katta yuzni topadi va kesib oladi.
- * 2) TFLite model (masalan MobileFaceNet) yordamida yuzni son vektoriga (embedding) aylantiradi.
- * 3) Saqlangan ota-ona / bola namunalari bilan solishtiradi.
+ * 2) TFLite model (masalan MobileFaceNet) yuzni son vektoriga aylantiradi.
+ * 3) Saqlangan ota-ona va har bir BOLA namunalari bilan solishtiradi —
+ *    kim ekanini (ota-ona yoki aniq bola) aniqlaydi.
  *
- * MUHIM: assets/ ichida "mobile_face_net.tflite" fayli bo'lishi kerak (README'ga qarang).
- * Model bo'lmasa, recognize() hamma narsani UNKNOWN qaytaradi.
+ * MUHIM: assets/ ichida "mobile_face_net.tflite" bo'lishi kerak (README'ga qarang).
  */
 class FaceRecognizer(context: Context) {
 
-    enum class Label { PARENT, CHILD, UNKNOWN, NO_FACE }
+    enum class Kind { PARENT, CHILD, UNKNOWN, NO_FACE }
+
+    /** Tanish natijasi. CHILD bo'lsa childId/childName to'ldiriladi. */
+    data class RecResult(
+        val kind: Kind,
+        val childId: String? = null,
+        val childName: String? = null
+    )
 
     private val appCtx = context.applicationContext
     private var interpreter: Interpreter? = null
-    private var inputSize = 112          // MobileFaceNet uchun odatda 112x112
-    private var embeddingSize = 192      // modelga qarab o'zgaradi (aniqlanadi)
+    private var inputSize = 112
+    private var embeddingSize = 192
 
     private val detector = FaceDetection.getClient(
         FaceDetectorOptions.Builder()
@@ -43,12 +50,10 @@ class FaceRecognizer(context: Context) {
     init {
         try {
             val model = loadModelFile(MODEL_NAME)
-            val opts = Interpreter.Options().apply { setNumThreads(2) }
-            val itp = Interpreter(model, opts)
-            // Chiqish o'lchamini modeldan o'qiymiz
-            val outShape = itp.getOutputTensor(0).shape() // [1, N]
+            val itp = Interpreter(model, Interpreter.Options().apply { setNumThreads(2) })
+            val outShape = itp.getOutputTensor(0).shape()
             embeddingSize = outShape[outShape.size - 1]
-            val inShape = itp.getInputTensor(0).shape()    // [1, H, W, 3]
+            val inShape = itp.getInputTensor(0).shape()
             if (inShape.size == 4) inputSize = inShape[1]
             interpreter = itp
         } catch (e: Exception) {
@@ -58,8 +63,7 @@ class FaceRecognizer(context: Context) {
 
     private fun loadModelFile(name: String): MappedByteBuffer {
         val afd = appCtx.assets.openFd(name)
-        val input = afd.createInputStream()
-        val channel = input.channel
+        val channel = afd.createInputStream().channel
         return channel.map(FileChannel.MapMode.READ_ONLY, afd.startOffset, afd.declaredLength)
     }
 
@@ -69,36 +73,48 @@ class FaceRecognizer(context: Context) {
         val rect = detectLargestFaceRect(bitmap) ?: return null
         val face = cropSafely(bitmap, rect)
         val scaled = Bitmap.createScaledBitmap(face, inputSize, inputSize, true)
-        val input = bitmapToBuffer(scaled)
         val output = Array(1) { FloatArray(embeddingSize) }
-        itp.run(input, output)
+        itp.run(bitmapToBuffer(scaled), output)
         return l2normalize(output[0])
     }
 
-    /** Rasmni ota-ona yoki bola sifatida tasniflaydi. */
-    fun recognize(bitmap: Bitmap): Label {
-        if (interpreter == null) return Label.UNKNOWN
-        val emb = embedLargestFace(bitmap) ?: return Label.NO_FACE
+    /** Rasmni ota-ona yoki aniq bir bola sifatida tasniflaydi. */
+    fun recognize(bitmap: Bitmap): RecResult {
+        if (interpreter == null) return RecResult(Kind.UNKNOWN)
+        val emb = embedLargestFace(bitmap) ?: return RecResult(Kind.NO_FACE)
 
-        val parents = EmbeddingStore.load(appCtx, EmbeddingStore.ROLE_PARENT)
-        val children = EmbeddingStore.load(appCtx, EmbeddingStore.ROLE_CHILD)
-        if (parents.isEmpty() && children.isEmpty()) return Label.UNKNOWN
+        val parents = Profiles.loadParent(appCtx)
+        val children = Profiles.listChildren(appCtx)
+        if (parents.isEmpty() && children.all { it.embeddings.isEmpty() }) {
+            return RecResult(Kind.UNKNOWN)
+        }
 
-        val pDist = minDistance(emb, parents)
-        val cDist = minDistance(emb, children)
         val threshold = Prefs.getMatchThreshold(appCtx)
+        val pDist = minDistance(emb, parents)
 
-        // Ikkisidan ham uzoq bo'lsa — noma'lum
-        if (pDist > threshold && cDist > threshold) return Label.UNKNOWN
-        return if (pDist <= cDist) Label.PARENT else Label.CHILD
+        var bestChildDist = Float.MAX_VALUE
+        var bestChild: ChildProfile? = null
+        for (c in children) {
+            val d = minDistance(emb, c.embeddings)
+            if (d < bestChildDist) {
+                bestChildDist = d
+                bestChild = c
+            }
+        }
+
+        if (pDist > threshold && bestChildDist > threshold) return RecResult(Kind.UNKNOWN)
+
+        return if (pDist <= bestChildDist) {
+            RecResult(Kind.PARENT)
+        } else {
+            RecResult(Kind.CHILD, bestChild?.id, bestChild?.name)
+        }
     }
 
     private fun detectLargestFaceRect(bitmap: Bitmap): Rect? {
         val image = InputImage.fromBitmap(bitmap, 0)
-        val task = detector.process(image)
         return try {
-            // Bu funksiyalar fon oqimda chaqiriladi (xizmat/ishchi ip)
-            com.google.android.gms.tasks.Tasks.await(task)
+            com.google.android.gms.tasks.Tasks.await(detector.process(image))
                 .maxByOrNull { it.boundingBox.width() * it.boundingBox.height() }
                 ?.boundingBox
         } catch (e: Exception) {
@@ -123,7 +139,6 @@ class FaceRecognizer(context: Context) {
             val r = (p shr 16 and 0xFF)
             val g = (p shr 8 and 0xFF)
             val b = (p and 0xFF)
-            // [-1, 1] oralig'iga normallashtirish (MobileFaceNet uslubi)
             buffer.putFloat((r - 127.5f) / 128f)
             buffer.putFloat((g - 127.5f) / 128f)
             buffer.putFloat((b - 127.5f) / 128f)
@@ -139,7 +154,7 @@ class FaceRecognizer(context: Context) {
         return FloatArray(v.size) { v[it] / norm }
     }
 
-    /** Eng yaqin namunagacha bo'lgan Evklid masofasi (normallashtirilgan vektorlar uchun). */
+    /** Eng yaqin namunagacha bo'lgan Evklid masofasi. Namuna yo'q bo'lsa MAX. */
     private fun minDistance(emb: FloatArray, samples: List<FloatArray>): Float {
         var best = Float.MAX_VALUE
         for (s in samples) {
