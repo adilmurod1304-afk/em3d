@@ -39,6 +39,40 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Fetch face-recognition model (MobileFaceNet)
+        run: |
+          set -e
+          dest="app/src/main/assets/mobile_face_net.tflite"
+          mkdir -p app/src/main/assets
+          # (repo path) juftliklari — birinchi yaroqli modelni oladi
+          sources=(
+            "nursena-pc/nomi-ai-gallery-app|app/src/main/assets/mobile_face_net.tflite"
+            "cvlehe/claude-face-matcher|app/src/main/assets/mobile_face_net.tflite"
+            "print-ramcharan/Agentathon-228|android-agent/app/src/main/assets/mobile_face_net.tflite"
+          )
+          ok=0
+          for s in "${sources[@]}"; do
+            repo="${s%%|*}"; path="${s##*|}"
+            echo "::group::Trying $repo"
+            rm -rf /tmp/fm
+            if git clone --depth 1 "https://github.com/$repo.git" /tmp/fm 2>/dev/null; then
+              git -C /tmp/fm lfs pull 2>/dev/null || true
+              if [ -f "/tmp/fm/$path" ]; then
+                cp "/tmp/fm/$path" "$dest"
+                sz=$(stat -c%s "$dest")
+                magic=$(dd if="$dest" bs=1 skip=4 count=4 2>/dev/null)
+                echo "size=$sz magic=$magic"
+                if [ "$sz" -gt 100000 ] && [ "$magic" = "TFL3" ]; then
+                  echo "OK: $repo/$path ($sz bytes)"; ok=1; echo "::endgroup::"; break
+                fi
+              fi
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$ok" != "1" ]; then
+            echo "Yaroqli TFLite model topilmadi"; exit 1
+          fi
+
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 

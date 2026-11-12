@@ -6,27 +6,30 @@ import android.graphics.Rect
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
  * Yuzni tanib oluvchi.
  * 1) ML Kit yordamida rasmdan eng katta yuzni topadi va kesib oladi.
- * 2) TFLite model (masalan MobileFaceNet) yuzni son vektoriga aylantiradi.
- * 3) Saqlangan ota-ona va har bir BOLA namunalari bilan solishtiradi —
- *    kim ekanini (ota-ona yoki aniq bola) aniqlaydi.
+ * 2) TFLite model (MobileFaceNet) yuzni son vektoriga (embedding) aylantiradi.
+ * 3) Saqlangan ota-ona va har bir BOLA namunalari bilan solishtiradi.
  *
- * MUHIM: assets/ ichida "mobile_face_net.tflite" bo'lishi kerak (README'ga qarang).
+ * Model float32 ham, kvantlangan (int8/uint8) ham bo'lishi mumkin — kirish/chiqish
+ * turi modeldan o'qib olinadi va mos ravishda tayyorlanadi.
+ *
+ * assets/ ichida "mobile_face_net.tflite" bo'lishi kerak (README'ga qarang).
  */
 class FaceRecognizer(context: Context) {
 
     enum class Kind { PARENT, CHILD, UNKNOWN, NO_FACE }
 
-    /** Tanish natijasi. CHILD bo'lsa childId/childName to'ldiriladi. */
     data class RecResult(
         val kind: Kind,
         val childId: String? = null,
@@ -35,8 +38,15 @@ class FaceRecognizer(context: Context) {
 
     private val appCtx = context.applicationContext
     private var interpreter: Interpreter? = null
+
     private var inputSize = 112
     private var embeddingSize = 192
+    private var inputType = DataType.FLOAT32
+    private var outputType = DataType.FLOAT32
+    private var inScale = 1f
+    private var inZero = 0
+    private var outScale = 1f
+    private var outZero = 0
 
     private val detector = FaceDetection.getClient(
         FaceDetectorOptions.Builder()
@@ -51,10 +61,21 @@ class FaceRecognizer(context: Context) {
         try {
             val model = loadModelFile(MODEL_NAME)
             val itp = Interpreter(model, Interpreter.Options().apply { setNumThreads(2) })
-            val outShape = itp.getOutputTensor(0).shape()
-            embeddingSize = outShape[outShape.size - 1]
-            val inShape = itp.getInputTensor(0).shape()
+
+            val inT = itp.getInputTensor(0)
+            val inShape = inT.shape()                 // [1, H, W, 3]
             if (inShape.size == 4) inputSize = inShape[1]
+            inputType = inT.dataType()
+            inT.quantizationParams()?.let { inScale = it.scale; inZero = it.zeroPoint }
+            if (inScale == 0f) inScale = 1f
+
+            val outT = itp.getOutputTensor(0)
+            val outShape = outT.shape()               // [1, N]
+            embeddingSize = outShape[outShape.size - 1]
+            outputType = outT.dataType()
+            outT.quantizationParams()?.let { outScale = it.scale; outZero = it.zeroPoint }
+            if (outScale == 0f) outScale = 1f
+
             interpreter = itp
         } catch (e: Exception) {
             interpreter = null
@@ -73,9 +94,26 @@ class FaceRecognizer(context: Context) {
         val rect = detectLargestFaceRect(bitmap) ?: return null
         val face = cropSafely(bitmap, rect)
         val scaled = Bitmap.createScaledBitmap(face, inputSize, inputSize, true)
-        val output = Array(1) { FloatArray(embeddingSize) }
-        itp.run(bitmapToBuffer(scaled), output)
-        return l2normalize(output[0])
+
+        val input = buildInputBuffer(scaled)
+        val outBytes = embeddingSize * if (outputType == DataType.FLOAT32) 4 else 1
+        val output = ByteBuffer.allocateDirect(outBytes).order(ByteOrder.nativeOrder())
+
+        itp.run(input, output)
+        output.rewind()
+
+        val emb = FloatArray(embeddingSize)
+        if (outputType == DataType.FLOAT32) {
+            for (i in 0 until embeddingSize) emb[i] = output.float
+        } else {
+            val signed = outputType == DataType.INT8
+            for (i in 0 until embeddingSize) {
+                val raw = output.get().toInt()
+                val q = if (signed) raw else (raw and 0xFF)
+                emb[i] = (q - outZero) * outScale
+            }
+        }
+        return l2normalize(emb)
     }
 
     /** Rasmni ota-ona yoki aniq bir bola sifatida tasniflaydi. */
@@ -96,19 +134,12 @@ class FaceRecognizer(context: Context) {
         var bestChild: ChildProfile? = null
         for (c in children) {
             val d = minDistance(emb, c.embeddings)
-            if (d < bestChildDist) {
-                bestChildDist = d
-                bestChild = c
-            }
+            if (d < bestChildDist) { bestChildDist = d; bestChild = c }
         }
 
         if (pDist > threshold && bestChildDist > threshold) return RecResult(Kind.UNKNOWN)
-
-        return if (pDist <= bestChildDist) {
-            RecResult(Kind.PARENT)
-        } else {
-            RecResult(Kind.CHILD, bestChild?.id, bestChild?.name)
-        }
+        return if (pDist <= bestChildDist) RecResult(Kind.PARENT)
+        else RecResult(Kind.CHILD, bestChild?.id, bestChild?.name)
     }
 
     private fun detectLargestFaceRect(bitmap: Bitmap): Rect? {
@@ -130,21 +161,38 @@ class FaceRecognizer(context: Context) {
         return Bitmap.createBitmap(src, left, top, right - left, bottom - top)
     }
 
-    private fun bitmapToBuffer(bmp: Bitmap): ByteBuffer {
-        val buffer = ByteBuffer.allocateDirect(4 * inputSize * inputSize * 3)
-        buffer.order(ByteOrder.nativeOrder())
-        val pixels = IntArray(inputSize * inputSize)
+    /** Pikselarni [-1,1] domeniga keltiradi; kerak bo'lsa model kvantiga moslaydi. */
+    private fun buildInputBuffer(bmp: Bitmap): ByteBuffer {
+        val count = inputSize * inputSize
+        val pixels = IntArray(count)
         bmp.getPixels(pixels, 0, inputSize, 0, 0, inputSize, inputSize)
+
+        val isFloat = inputType == DataType.FLOAT32
+        val bytesPerCh = if (isFloat) 4 else 1
+        val buf = ByteBuffer.allocateDirect(count * 3 * bytesPerCh).order(ByteOrder.nativeOrder())
+        val signed = inputType == DataType.INT8
+
         for (p in pixels) {
             val r = (p shr 16 and 0xFF)
             val g = (p shr 8 and 0xFF)
             val b = (p and 0xFF)
-            buffer.putFloat((r - 127.5f) / 128f)
-            buffer.putFloat((g - 127.5f) / 128f)
-            buffer.putFloat((b - 127.5f) / 128f)
+            putChannel(buf, r, isFloat, signed)
+            putChannel(buf, g, isFloat, signed)
+            putChannel(buf, b, isFloat, signed)
         }
-        buffer.rewind()
-        return buffer
+        buf.rewind()
+        return buf
+    }
+
+    private fun putChannel(buf: ByteBuffer, c: Int, isFloat: Boolean, signed: Boolean) {
+        val f = (c - 127.5f) / 128f   // [-1, 1]
+        if (isFloat) {
+            buf.putFloat(f)
+        } else {
+            val q = (f / inScale + inZero).roundToInt()
+            val clamped = if (signed) q.coerceIn(-128, 127) else q.coerceIn(0, 255)
+            buf.put(clamped.toByte())
+        }
     }
 
     private fun l2normalize(v: FloatArray): FloatArray {
