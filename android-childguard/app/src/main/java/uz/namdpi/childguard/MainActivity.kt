@@ -8,11 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -167,13 +163,20 @@ class MainActivity : AppCompatActivity() {
         val overlayOk = Settings.canDrawOverlays(this)
         val pCount = Profiles.parentCount(this)
         val children = Profiles.listChildren(this)
+        val ready = canStartGuard()
+
+        binding.readyBanner.text =
+            if (ready) getString(R.string.ready_ok) else getString(R.string.ready_setup)
+        binding.readyBanner.setTextColor(
+            ContextCompat.getColor(this, if (ready) R.color.cg_success else R.color.cg_primary)
+        )
 
         binding.statusText.text = buildString {
-            append(mark(camOk)); append(" "); append(getString(R.string.perm_camera)); append('\n')
-            append(mark(overlayOk)); append(" "); append(getString(R.string.perm_overlay)); append('\n')
-            append(mark(pCount > 0)); append(" ")
+            append(mark(camOk)); append("  "); append(getString(R.string.perm_camera)); append('\n')
+            append(mark(overlayOk)); append("  "); append(getString(R.string.perm_overlay)); append('\n')
+            append(mark(pCount > 0)); append("  ")
             append(getString(R.string.parent_faces, pCount)); append('\n')
-            append(mark(children.any { it.embeddings.isNotEmpty() })); append(" ")
+            append(mark(children.any { it.embeddings.isNotEmpty() })); append("  ")
             append(getString(R.string.children_total, children.size))
         }
 
@@ -187,51 +190,29 @@ class MainActivity : AppCompatActivity() {
         val container = binding.childrenContainer
         container.removeAllViews()
         val limit = Prefs.getLimitMinutes(this)
+        val inflater = layoutInflater
 
         if (children.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = getString(R.string.no_children_yet)
-                setPadding(0, dp(4), 0, dp(4))
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.cg_muted))
+                textSize = 13f
+                setPadding(0, dp(8), 0, dp(4))
             })
             return
         }
 
         for (child in children) {
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(12), dp(10), dp(12), dp(10))
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply { topMargin = dp(6) }
-                setBackgroundColor(0x11000000)
-            }
-
+            val row = inflater.inflate(R.layout.item_child, container, false)
             val usedMin = (Prefs.getChildUsedMillis(this, child.id) / 60000L).toInt()
-            val info = TextView(this).apply {
-                text = getString(
-                    R.string.child_row_info,
-                    child.name, child.embeddings.size, usedMin, limit
-                )
-                textSize = 15f
-            }
-            row.addView(info)
 
-            val btnRow = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.END
-            }
-            val enrollBtn = Button(this).apply {
-                text = getString(R.string.btn_enroll_samples)
-                setOnClickListener { enrollChild(child.id) }
-            }
-            val removeBtn = Button(this).apply {
-                text = getString(R.string.btn_remove)
-                setOnClickListener { confirmRemoveChild(child) }
-            }
-            btnRow.addView(enrollBtn)
-            btnRow.addView(removeBtn)
-            row.addView(btnRow)
+            row.findViewById<TextView>(R.id.childName).text = child.name
+            row.findViewById<TextView>(R.id.childInfo).text =
+                getString(R.string.child_info, child.embeddings.size, usedMin, limit)
+            row.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnEnroll)
+                .setOnClickListener { enrollChild(child.id) }
+            row.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRemove)
+                .setOnClickListener { confirmRemoveChild(child) }
 
             container.addView(row)
         }
@@ -239,7 +220,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
-    private fun mark(ok: Boolean) = if (ok) "✅" else "⬜"
+    private fun mark(ok: Boolean) = if (ok) "✅" else "◻️"
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 }

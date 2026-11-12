@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/cg_bg"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -9,21 +11,53 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/cg_text"
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp" />
+        android:textStyle="bold" />
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/preview"
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="@string/enroll_hint"
+        android:textColor="@color/cg_muted"
+        android:textSize="13sp" />
+
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="14dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/cg_outline"
+        app:strokeWidth="1dp">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:implementationMode="compatible" />
+    </com.google.android.material.card.MaterialCardView>
 
     <TextView
         android:id="@+id/count"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:textColor="@color/cg_text"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/captureButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/btn_capture"
+        app:icon="@drawable/ic_camera"
+        app:iconGravity="textStart" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,26 +66,20 @@
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/captureButton"
+            android:id="@+id/clearButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/btn_capture" />
+            android:text="@string/btn_clear" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/clearButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
+            android:id="@+id/doneButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="@string/btn_clear" />
+            android:text="@string/btn_done" />
     </LinearLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/doneButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/btn_done" />
-
 </LinearLayout>

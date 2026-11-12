@@ -3,6 +3,13 @@
     <string name="app_name">ChildGuard</string>
 
     <!-- MainActivity -->
+    <string name="app_subtitle">Yuz orqali ekran vaqti nazorati</string>
+    <string name="sec_permissions">Ruxsatlar</string>
+    <string name="sec_faces">Yuzlar</string>
+    <string name="sec_settings">Sozlamalar</string>
+    <string name="btn_save_short">Saqlash</string>
+    <string name="guard_hint">Kuzatuvni yoqadi va vaqt tugaganда bloklaydi</string>
+    <string name="footer_note">Ma\'lumotlar faqat shu telefonда saqlanadi</string>
     <string name="title_setup">Himoya sozlamalari</string>
     <string name="btn_perms">1. Kamera va bildirishnoma ruxsati</string>
     <string name="btn_overlay">2. Ustidan ko\'rinish ruxsati</string>
@@ -18,9 +25,12 @@
     <string name="remove_child_title">Bolani o\'chirish</string>
     <string name="remove_child_msg">%1$s profilini o\'chirasizmi?</string>
     <string name="children_total">Bolalar: %1$d ta</string>
-    <string name="limit_label">Har bir bola uchun kunlik vaqt (daqiqa):</string>
+    <string name="child_info">%1$d namuna · bugun %2$d/%3$d daq</string>
+    <string name="ready_ok">✅ Himoya tayyor — yoqishingiz mumkin</string>
+    <string name="ready_setup">⚠️ Sozlamalarni to\'ldiring</string>
+    <string name="limit_label">Kunlik vaqt (daqiqa)</string>
     <string name="btn_save_limit">Vaqtni saqlash</string>
-    <string name="pin_label">Ota-ona zaxira PIN (kamida 4 raqam):</string>
+    <string name="pin_label">Zaxira PIN (4+ raqam)</string>
     <string name="btn_save_pin">PIN saqlash</string>
     <string name="guard_label">Himoyani yoqish</string>
     <string name="status_title">Holat:</string>
@@ -38,6 +48,7 @@
     <!-- EnrollActivity -->
     <string name="enroll_parent">Ota-ona yuzini ro\'yxatga olish</string>
     <string name="enroll_child_named">Bola yuzi: %1$s</string>
+    <string name="enroll_hint">Yuzni kameraга to\'g\'ri qarating va namuna oling</string>
     <string name="btn_capture">Namuna qo\'shish</string>
     <string name="btn_clear">Tozalash</string>
     <string name="btn_remove">O\'chirish</string>

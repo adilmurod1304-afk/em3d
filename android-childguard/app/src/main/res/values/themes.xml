@@ -1,13 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ChildGuard" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#1565C0</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
+    <style name="Theme.ChildGuard" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/cg_primary</item>
+        <item name="colorOnPrimary">@color/cg_on_primary</item>
+        <item name="colorPrimaryContainer">@color/cg_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/cg_on_primary_container</item>
+        <item name="colorSecondary">@color/cg_secondary</item>
+        <item name="colorOnSecondary">#06252B</item>
+        <item name="colorSecondaryContainer">#262C45</item>
+        <item name="colorOnSecondaryContainer">#D6DEF5</item>
+        <item name="colorSurface">@color/cg_surface</item>
+        <item name="colorOnSurface">@color/cg_text</item>
+        <item name="colorSurfaceVariant">@color/cg_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/cg_muted</item>
+        <item name="colorOutline">@color/cg_outline</item>
+        <item name="colorError">@color/cg_danger</item>
+        <item name="android:colorBackground">@color/cg_bg</item>
+        <item name="android:windowBackground">@color/cg_bg</item>
+        <item name="android:statusBarColor">@color/cg_bg</item>
+        <item name="android:navigationBarColor">@color/cg_bg</item>
     </style>
 
     <style name="Theme.ChildGuard.Lock" parent="Theme.ChildGuard">
         <item name="android:windowFullscreen">true</item>
-        <item name="android:windowBackground">#000000</item>
-        <item name="android:statusBarColor">#000000</item>
+        <item name="android:windowBackground">@color/cg_black</item>
+        <item name="android:statusBarColor">@color/cg_black</item>
+    </style>
+
+    <!-- Dotted stil nomlari uchun bo'sh asos -->
+    <style name="Cg" parent="" />
+
+    <!-- Karta sarlavhasi -->
+    <style name="Cg.CardTitle">
+        <item name="android:textColor">@color/cg_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <!-- Karta -->
+    <style name="Cg.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardBackgroundColor">@color/cg_surface</item>
+        <item name="strokeColor">@color/cg_outline</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="Cg.Card.Accent" parent="Cg.Card">
+        <item name="cardBackgroundColor">@color/cg_surface_variant</item>
+        <item name="strokeColor">@color/cg_primary</item>
+    </style>
+
+    <!-- Karta ichki konteyneri -->
+    <style name="Cg.CardInner">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">18dp</item>
     </style>
 </resources>

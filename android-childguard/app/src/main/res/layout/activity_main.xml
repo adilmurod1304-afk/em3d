@@ -1,137 +1,279 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/cg_bg"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/title_setup"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:paddingBottom="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPerms"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_perms" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_overlay" />
-
-        <View android:layout_width="match_parent" android:layout_height="1dp"
-            android:background="#33000000" android:layout_marginVertical="16dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEnrollParent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_enroll_parent" />
-
-        <View android:layout_width="match_parent" android:layout_height="1dp"
-            android:background="#33000000" android:layout_marginVertical="16dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/children_header"
-            android:textStyle="bold"
-            android:textSize="16sp" />
-
+        <!-- Header -->
         <LinearLayout
-            android:id="@+id/childrenContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="4dp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="8dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAddChild"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_add_child" />
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_icon_circle"
+                android:padding="11dp"
+                android:src="@drawable/ic_shield"
+                app:tint="@color/cg_primary"
+                android:contentDescription="@null" />
 
-        <View android:layout_width="match_parent" android:layout_height="1dp"
-            android:background="#33000000" android:layout_marginVertical="16dp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textColor="@color/cg_text"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_subtitle"
+                    android:textColor="@color/cg_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Holat (readiness) -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Cg.Card">
+            <LinearLayout style="@style/Cg.CardInner">
+
+                <TextView
+                    android:id="@+id/readyBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/cg_text"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="5dp"
+                    android:textColor="@color/cg_muted"
+                    android:textSize="13.5sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Ruxsatlar -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Cg.Card">
+            <LinearLayout style="@style/Cg.CardInner">
+
+                <TextView style="@style/Cg.CardTitle" android:text="@string/sec_permissions"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPerms"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="start|center_vertical"
+                    android:text="@string/btn_perms"
+                    app:icon="@drawable/ic_camera"
+                    app:iconGravity="textStart" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOverlay"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="start|center_vertical"
+                    android:text="@string/btn_overlay"
+                    app:icon="@drawable/ic_layers"
+                    app:iconGravity="textStart" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Yuzlar -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Cg.Card">
+            <LinearLayout style="@style/Cg.CardInner">
+
+                <TextView style="@style/Cg.CardTitle" android:text="@string/sec_faces"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEnrollParent"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="start|center_vertical"
+                    android:text="@string/btn_enroll_parent"
+                    app:icon="@drawable/ic_person_add"
+                    app:iconGravity="textStart" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/children_header"
+                    android:textColor="@color/cg_muted"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:id="@+id/childrenContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddChild"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/btn_add_child"
+                    app:icon="@drawable/ic_add"
+                    app:iconGravity="textStart" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Sozlamalar -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Cg.Card">
+            <LinearLayout style="@style/Cg.CardInner">
+
+                <TextView style="@style/Cg.CardTitle" android:text="@string/sec_settings"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/limitLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:startIconDrawable="@drawable/ic_timer"
+                        android:hint="@string/limit_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/limitInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="number" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveLimit"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/btn_save_short" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/pinLayout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:startIconDrawable="@drawable/ic_key"
+                        app:passwordToggleEnabled="true"
+                        android:hint="@string/pin_label">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/pinInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberPassword" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSavePin"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/btn_save_short" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Himoya -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Cg.Card.Accent">
+            <LinearLayout
+                style="@style/Cg.CardInner"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/guard_label"
+                        android:textColor="@color/cg_text"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/guard_hint"
+                        android:textColor="@color/cg_muted"
+                        android:textSize="12.5sp" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/guardSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/limit_label" />
-
-        <EditText
-            android:id="@+id/limitInput"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:text="30"
-            android:autofillHints="" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveLimit"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/btn_save_limit" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/pin_label" />
-
-        <EditText
-            android:id="@+id/pinInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberPassword"
-            android:autofillHints="" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSavePin"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/btn_save_pin" />
-
-        <View android:layout_width="match_parent" android:layout_height="1dp"
-            android:background="#33000000" android:layout_marginVertical="16dp" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/guardSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/guard_label"
-            android:textSize="18sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/status_title"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:lineSpacingExtra="4dp"
-            android:fontFamily="monospace" />
+            android:gravity="center"
+            android:text="@string/footer_note"
+            android:textColor="@color/cg_muted"
+            android:textSize="11.5sp" />
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

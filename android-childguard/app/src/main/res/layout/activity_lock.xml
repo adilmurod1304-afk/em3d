@@ -1,19 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
+    android:background="@color/cg_black"
     android:gravity="center_horizontal"
     android:orientation="vertical"
     android:padding="24dp">
 
+    <ImageView
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/bg_icon_circle"
+        android:padding="18dp"
+        android:src="@drawable/ic_shield"
+        app:tint="@color/cg_primary"
+        android:contentDescription="@null" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:text="@string/locked_title"
-        android:textColor="#FFFFFF"
-        android:textSize="26sp"
+        android:textColor="@color/cg_text"
+        android:textSize="24sp"
         android:textStyle="bold" />
 
     <TextView
@@ -23,36 +34,55 @@
         android:layout_marginTop="8dp"
         android:gravity="center"
         android:text="@string/locked_sub"
-        android:textColor="#DDDDDD"
-        android:textSize="15sp" />
+        android:textColor="@color/cg_muted"
+        android:textSize="14sp" />
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/preview"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
-        android:layout_marginTop="20dp" />
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_marginTop="24dp"
+        app:cardCornerRadius="120dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/cg_primary"
+        app:strokeWidth="2dp">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:implementationMode="compatible" />
+    </com.google.android.material.card.MaterialCardView>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="28dp"
         android:text="@string/use_pin"
-        android:textColor="#AAAAAA" />
+        android:textColor="@color/cg_muted"
+        android:textSize="13sp" />
 
-    <EditText
-        android:id="@+id/pinInput"
-        android:layout_width="200dp"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/pinLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="220dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:inputType="numberPassword"
-        android:textColor="#FFFFFF"
-        android:autofillHints="" />
+        android:layout_marginTop="6dp"
+        app:startIconDrawable="@drawable/ic_key"
+        android:hint="@string/pin_label">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/pinInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:inputType="numberPassword" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/pinButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_width="220dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="10dp"
         android:text="@string/btn_unlock_pin" />
 
 </LinearLayout>
