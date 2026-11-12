@@ -47,27 +47,43 @@ jobs:
           echo "Model size: $sz bytes"
           [ "$sz" -gt 1000000 ] || { echo "Model juda kichik"; exit 1; }
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Generate signing keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/childguard.jks" \
+            -storepass childguard -keypass childguard -alias childguard \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=ChildGuard, OU=Dev, O=ChildGuard, L=NA, ST=NA, C=UZ"
 
-      - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/childguard-1.0-debug.apk
+      - name: Build signed release APK
+        env:
+          CG_KEYSTORE: ${{ runner.temp }}/childguard.jks
+          CG_STORE_PW: childguard
+          CG_KEY_ALIAS: childguard
+          CG_KEY_PW: childguard
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Upload APK artifact
+      - name: Collect output
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk out/childguard-1.0-release.apk
+          ls -la out
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: childguard-debug-apk
-          path: android-childguard/app/build/outputs/apk/debug/childguard-1.0-debug.apk
+          name: childguard-release-apk
+          path: android-childguard/out/childguard-1.0-release.apk
           if-no-files-found: error
 
       - name: Publish to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: childguard-latest
-          name: ChildGuard — debug APK
+          name: ChildGuard — release
           body: |
-            Bolalar ekran vaqtini yuz orqali cheklovchi ilova (debug APK).
-            Telefonda "Noma'lum manbalardan o'rnatish" ruxsatini yoqib o'rnating.
-            Eslatma: yuzni tanish uchun app/src/main/assets/mobile_face_net.tflite
-            modeli kerak (bo'lmasa faqat PIN ishlaydi). Batafsil: android-childguard/README.md
-          files: android-childguard/app/build/outputs/apk/debug/childguard-1.0-debug.apk
+            Bolalar ekran vaqtini yuz orqali cheklovchi ilova — IMZOLANGAN release APK.
+            Telefonga o'rnatish: childguard-1.0-release.apk ni yuklab, oching.
+            "Noma'lum manbalardan o'rnatish" ruxsatini yoqing.
+            Batafsil: android-childguard/README.md
+          files: android-childguard/out/childguard-1.0-release.apk
