@@ -31,8 +31,8 @@ android {
     buildFeatures {
         viewBinding true
     }
-    // TFLite modelini siqib yubormaslik uchun
-    androidResources {
+    // TFLite modelini siqib yubormaslik uchun (memory-map qilish uchun zarur)
+    aaptOptions {
         noCompress 'tflite'
     }
 }
