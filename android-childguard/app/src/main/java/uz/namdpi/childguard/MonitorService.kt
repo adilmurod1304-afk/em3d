@@ -83,7 +83,7 @@ class MonitorService : LifecycleService() {
         if (!Prefs.isGuardEnabled(this)) return
         if (Prefs.isLocked(this)) return        // allaqachon bloklangan
 
-        val bitmap = proxy.toBitmap()
+        val bitmap = proxy.toUprightBitmap()
         val result = recognizer.recognize(bitmap)
 
         // Faqat aniq bir BOLA tanilsa — o'sha bolaning vaqtiga qo'shamiz.

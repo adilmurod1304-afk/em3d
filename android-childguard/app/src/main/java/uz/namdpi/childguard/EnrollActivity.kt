@@ -74,7 +74,7 @@ class EnrollActivity : AppCompatActivity() {
                     .build()
                 analysis.setAnalyzer(exec) { proxy ->
                     try {
-                        lastBitmap = proxy.toBitmap()
+                        lastBitmap = proxy.toUprightBitmap()
                     } finally {
                         proxy.close()
                     }

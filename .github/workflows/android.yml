@@ -66,14 +66,14 @@ jobs:
       - name: Collect output
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/release/app-release.apk out/childguard-1.0-release.apk
+          cp app/build/outputs/apk/release/app-release.apk out/childguard-release.apk
           ls -la out
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: childguard-release-apk
-          path: android-childguard/out/childguard-1.0-release.apk
+          path: android-childguard/out/childguard-release.apk
           if-no-files-found: error
 
       - name: Publish to Release
@@ -83,7 +83,7 @@ jobs:
           name: ChildGuard — release
           body: |
             Bolalar ekran vaqtini yuz orqali cheklovchi ilova — IMZOLANGAN release APK.
-            Telefonga o'rnatish: childguard-1.0-release.apk ni yuklab, oching.
+            Telefonga o'rnatish: childguard-release.apk ni yuklab, oching.
             "Noma'lum manbalardan o'rnatish" ruxsatini yoqing.
             Batafsil: android-childguard/README.md
-          files: android-childguard/out/childguard-1.0-release.apk
+          files: android-childguard/out/childguard-release.apk

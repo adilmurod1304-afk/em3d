@@ -108,7 +108,7 @@ class LockActivity : AppCompatActivity() {
 
     private fun checkParent(proxy: androidx.camera.core.ImageProxy) {
         if (!recognizer.isModelLoaded) return
-        val result = recognizer.recognize(proxy.toBitmap())
+        val result = recognizer.recognize(proxy.toUprightBitmap())
         if (result.kind == FaceRecognizer.Kind.PARENT) {
             parentStreak++
             // Xatodan saqlanish uchun ketma-ket 2 marta tasdiqlansin
