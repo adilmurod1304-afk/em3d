@@ -44,8 +44,8 @@ ochadi. Blok ochilganda faqat o'sha bolaning hisobi nolga tushadi.
 1. **Android Studio** (Koala / 2024+) o'rnating.
 2. Shu `android-childguard/` papkasini Android Studio'da oching.
 3. Internet bo'lsa Gradle kutubxonalarni o'zi yuklaydi.
-4. **Yuz modelini qo'shing**: `app/src/main/assets/mobile_face_net.tflite`
-   (qarang: `assets/PUT_MODEL_HERE.txt`).
+4. Yuz-tanish modeli (`app/src/main/assets/mobile_face_net.tflite`, MobileFaceNet,
+   112×112, 192-o'lchovli) loyihada allaqachon mavjud — qo'shish shart emas.
 5. `Build > Build APK(s)` yoki telefonni ulab **Run** ▶ bosing.
 
 Terminaldan (SDK o'rnatilgan bo'lsa):
@@ -53,6 +53,11 @@ Terminaldan (SDK o'rnatilgan bo'lsa):
 ./gradlew assembleDebug
 # natija: app/build/outputs/apk/debug/app-debug.apk
 ```
+
+> **Model manbai:** `mobile_face_net.tflite` — ochiq manbali MobileFaceNet
+> (Andrew-Hardianto/capacitor-face-recognition-tflite loyihasidan). Faqat shaxsiy
+> (o'z farzandingiz) foydalanish uchun. Boshqa/aniqroq modelni shu nom bilan
+> almashtirsangiz ham ishlaydi — kirish/chiqish shakli koddan avtomatik o'qiladi.
 
 ## Telefonda sozlash
 
