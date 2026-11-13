@@ -84,7 +84,11 @@ class MonitorService : LifecycleService() {
         lastTick = now
 
         if (!Prefs.isGuardEnabled(this)) return
-        if (Prefs.isLocked(this)) return        // allaqachon bloklangan
+        if (Prefs.isLocked(this)) {
+            // Bola blokni Home bilan chetlab o'tgan bo'lsa — ekranni qayta oldinga chiqaramiz
+            relaunchLock()
+            return
+        }
         if (now < Prefs.getGraceUntil(this)) return  // ochilgandan keyingi qisqa muhlat
 
         val bitmap = proxy.toUprightBitmap()
@@ -128,6 +132,16 @@ class MonitorService : LifecycleService() {
         Prefs.setLockedChild(this, childId, childName)
         val i = Intent(this, LockActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        startActivity(i)
+    }
+
+    /** Blok hali kuchda bo'lsa, blok ekranini qayta oldinga chiqaradi (zaxira). */
+    private fun relaunchLock() {
+        val i = Intent(this, LockActivity::class.java).addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        )
         startActivity(i)
     }
 

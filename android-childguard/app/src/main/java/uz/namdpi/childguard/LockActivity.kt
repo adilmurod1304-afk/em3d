@@ -1,5 +1,6 @@
 package uz.namdpi.childguard
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -130,6 +131,28 @@ class LockActivity : AppCompatActivity() {
         // Kamerani kuzatuv xizmatiga qaytaramiz (blok ekrani uni olib qo'ygan edi)
         if (Prefs.isGuardEnabled(this)) MonitorService.start(this)
         finish()
+    }
+
+    // Bola Home/Recents bossa — blok hali kuchda bo'lsa, ekranni darhol qaytaramiz
+    override fun onStop() {
+        super.onStop()
+        reassertIfLocked()
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        reassertIfLocked()
+    }
+
+    private fun reassertIfLocked() {
+        if (unlocking) return
+        if (!Prefs.isLocked(this)) return
+        val i = Intent(this, LockActivity::class.java).addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        )
+        startActivity(i)
     }
 
     override fun onDestroy() {
