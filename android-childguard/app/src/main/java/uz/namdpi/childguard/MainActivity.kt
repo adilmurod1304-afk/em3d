@@ -81,6 +81,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        // Kamera boshqa ekrandan qaytganda kuzatuv xizmatiga qayta ulansin
+        if (Prefs.isGuardEnabled(this)) MonitorService.start(this)
     }
 
     // ---------- Ro'yxatga olish ----------

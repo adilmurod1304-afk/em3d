@@ -36,6 +36,9 @@ class MonitorService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        // Qayta start signali (masalan blok yoki enroll ekrani kamerani olib qo'ygач) —
+        // kamerani o'zimizga qaytarib ulaymiz. Birinchi startда provider hali null bo'ladi.
+        if (cameraProvider != null) startCamera()
         // Xizmat o'ldirilsa, qayta tiklanadi
         return START_STICKY
     }

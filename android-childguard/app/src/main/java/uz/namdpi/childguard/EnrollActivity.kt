@@ -120,6 +120,8 @@ class EnrollActivity : AppCompatActivity() {
     override fun onDestroy() {
         exec.shutdown()
         recognizer.close()
+        // Kamerani kuzatuv xizmatiga qaytaramiz (enroll uni olib qo'ygan edi)
+        if (Prefs.isGuardEnabled(this)) MonitorService.start(this)
         super.onDestroy()
     }
 

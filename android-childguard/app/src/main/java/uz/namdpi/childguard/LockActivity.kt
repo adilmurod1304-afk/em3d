@@ -127,6 +127,8 @@ class LockActivity : AppCompatActivity() {
         // Kunlik cheklov (B): hisob NOLGA tushmaydi. Faqat qisqa muhlat beramiz,
         // shunda darhol qayta bloklanib ketmaydi (telefonni qaytarish uchun).
         Prefs.setGraceUntil(this, System.currentTimeMillis() + GRACE_MS)
+        // Kamerani kuzatuv xizmatiga qaytaramiz (blok ekrani uni olib qo'ygan edi)
+        if (Prefs.isGuardEnabled(this)) MonitorService.start(this)
         finish()
     }
 
