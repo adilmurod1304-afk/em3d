@@ -157,7 +157,7 @@ class FaceRecognizer(context: Context) {
         val parents = Profiles.loadParent(appCtx)
         val children = Profiles.listChildren(appCtx)
 
-        val pDist = minDistance(emb, parents)
+        val pDist = if (parents.isEmpty()) Float.MAX_VALUE else minDistance(emb, parents)
         var cDist = Float.MAX_VALUE
         var best: ChildProfile? = null
         for (c in children) {
@@ -165,8 +165,10 @@ class FaceRecognizer(context: Context) {
             if (d < cDist) { cDist = d; best = c }
         }
 
-        if (parents.isNotEmpty() && pDist <= UNLOCK_MAX_DIST && (pDist + UNLOCK_MARGIN) < cDist) {
-            return RecResult(Kind.PARENT)   // ota-ona — vaqt sanalmaydi
+        // Eng yaqin g'alaba qiladi: ota-onага yaqin (yoki teng) bo'lsa — SANALMAYDI.
+        // Shunda ota-ona bloklanmaydi; faqat bolага yaqin yuzlar vaqt yig'adi.
+        if (parents.isNotEmpty() && pDist <= cDist) {
+            return RecResult(Kind.PARENT)
         }
         return if (best != null) RecResult(Kind.CHILD, best.id, best.name)
         else RecResult(Kind.UNKNOWN)
