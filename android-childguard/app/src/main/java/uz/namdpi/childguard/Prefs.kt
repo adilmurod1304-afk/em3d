@@ -59,6 +59,12 @@ object Prefs {
             .putString("locked_child_name", name)
             .apply()
 
+    /** Blok ochilgandan keyin qisqa muhlat: shu vaqtgacha qayta bloklanmaydi. */
+    fun getGraceUntil(ctx: Context): Long = sp(ctx).getLong("grace_until", 0L)
+
+    fun setGraceUntil(ctx: Context, untilMs: Long) =
+        sp(ctx).edit().putLong("grace_until", untilMs).apply()
+
     // ---------- Har bir bola uchun kunlik hisob ----------
 
     private fun today(): Int = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)

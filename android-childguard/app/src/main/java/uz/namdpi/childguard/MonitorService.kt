@@ -82,6 +82,7 @@ class MonitorService : LifecycleService() {
 
         if (!Prefs.isGuardEnabled(this)) return
         if (Prefs.isLocked(this)) return        // allaqachon bloklangan
+        if (now < Prefs.getGraceUntil(this)) return  // ochilgandan keyingi qisqa muhlat
 
         val bitmap = proxy.toUprightBitmap()
         val result = recognizer.monitorClassify(bitmap)

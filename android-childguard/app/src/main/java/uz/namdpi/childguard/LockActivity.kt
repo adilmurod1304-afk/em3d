@@ -124,9 +124,9 @@ class LockActivity : AppCompatActivity() {
         if (unlocking) return
         unlocking = true
         Prefs.setLocked(this, false)
-        // Sababchi bolaning hisobini nolga tushiramiz — yangi ruxsat davri.
-        val lockedId = Prefs.getLockedChildId(this)
-        if (lockedId.isNotBlank()) Prefs.resetChildUsed(this, lockedId)
+        // Kunlik cheklov (B): hisob NOLGA tushmaydi. Faqat qisqa muhlat beramiz,
+        // shunda darhol qayta bloklanib ketmaydi (telefonni qaytarish uchun).
+        Prefs.setGraceUntil(this, System.currentTimeMillis() + GRACE_MS)
         finish()
     }
 
@@ -138,5 +138,6 @@ class LockActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "LockActivity"
+        private const val GRACE_MS = 30_000L   // ochilgandan keyingi muhlat
     }
 }
