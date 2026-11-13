@@ -69,4 +69,5 @@
 
     <!-- Service -->
     <string name="guard_running">Himoya yoqilgan — kuzatilmoqda</string>
+    <string name="guard_status">%1$s: %2$d/%3$d daq — kuzatilmoqda</string>
 </resources>

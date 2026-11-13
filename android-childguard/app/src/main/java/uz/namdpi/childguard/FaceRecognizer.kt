@@ -145,6 +145,33 @@ class FaceRecognizer(context: Context) {
         else RecResult(Kind.CHILD, bestChild?.id, bestChild?.name)
     }
 
+    /**
+     * KUZATUV uchun tasnif (bloklash). Ehtiyotkor: ota-ona ANIQ tanilсагина PARENT;
+     * aks holda yuz bo'lsa eng yaqin bolага yoziladi (notanish ham bola deb hisoblanadi,
+     * shunda cheklovни chetlab bo'lmaydi).
+     */
+    fun monitorClassify(bitmap: Bitmap): RecResult {
+        if (interpreter == null) return RecResult(Kind.UNKNOWN)
+        val emb = embedLargestFace(bitmap) ?: return RecResult(Kind.NO_FACE)
+
+        val parents = Profiles.loadParent(appCtx)
+        val children = Profiles.listChildren(appCtx)
+
+        val pDist = minDistance(emb, parents)
+        var cDist = Float.MAX_VALUE
+        var best: ChildProfile? = null
+        for (c in children) {
+            val d = minDistance(emb, c.embeddings)
+            if (d < cDist) { cDist = d; best = c }
+        }
+
+        if (parents.isNotEmpty() && pDist <= UNLOCK_MAX_DIST && (pDist + UNLOCK_MARGIN) < cDist) {
+            return RecResult(Kind.PARENT)   // ota-ona — vaqt sanalmaydi
+        }
+        return if (best != null) RecResult(Kind.CHILD, best.id, best.name)
+        else RecResult(Kind.UNKNOWN)
+    }
+
     /** Yuzni to'g'ri, so'ng 90/270/180° aylantirib izlaydi. Topilса — (to'g'rilangan rasm, yuz joyi). */
     private fun findFaceAnyOrientation(bitmap: Bitmap): Pair<Bitmap, Rect>? {
         for (deg in intArrayOf(0, 90, 270, 180)) {

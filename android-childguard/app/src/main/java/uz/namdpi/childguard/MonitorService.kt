@@ -84,19 +84,39 @@ class MonitorService : LifecycleService() {
         if (Prefs.isLocked(this)) return        // allaqachon bloklangan
 
         val bitmap = proxy.toUprightBitmap()
-        val result = recognizer.recognize(bitmap)
+        val result = recognizer.monitorClassify(bitmap)
 
-        // Faqat aniq bir BOLA tanilsa — o'sha bolaning vaqtiga qo'shamiz.
+        // Ota-ona emas (bola yoki notanish) yuz bo'lsa — eng yaqin bolaning vaqtiga qo'shamiz.
         if (result.kind == FaceRecognizer.Kind.CHILD && result.childId != null) {
             val delta = if (prevTick == 0L) TICK_MS else (now - prevTick).coerceAtMost(TICK_MS * 2)
             Prefs.addChildUsedMillis(this, result.childId, delta)
 
-            val limitMs = Prefs.getLimitMinutes(this) * 60_000L
-            if (Prefs.getChildUsedMillis(this, result.childId) >= limitMs) {
+            val usedMs = Prefs.getChildUsedMillis(this, result.childId)
+            val limit = Prefs.getLimitMinutes(this)
+            // Bildirishnomada jonli holat — kuzatuv ishlayotganini ko'rsatadi
+            updateNotification(
+                getString(
+                    R.string.guard_status,
+                    result.childName ?: "?",
+                    (usedMs / 60_000L).toInt(), limit
+                )
+            )
+            if (usedMs >= limit * 60_000L) {
                 lockNow(result.childId, result.childName ?: "")
             }
         }
-        // PARENT / UNKNOWN / NO_FACE bo'lsa hech kimning vaqti qo'shilmaydi.
+        // PARENT / NO_FACE / UNKNOWN bo'lsa hech kimning vaqti qo'shilmaydi.
+    }
+
+    private fun updateNotification(text: String) {
+        val n = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setOngoing(true)
+            .build()
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(NOTIF_ID, n)
     }
 
     private fun lockNow(childId: String, childName: String) {
