@@ -2,6 +2,7 @@ package uz.namdpi.childguard
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.graphics.Rect
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
@@ -50,8 +51,8 @@ class FaceRecognizer(context: Context) {
 
     private val detector = FaceDetection.getClient(
         FaceDetectorOptions.Builder()
-            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-            .setMinFaceSize(0.15f)
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+            .setMinFaceSize(0.12f)
             .build()
     )
 
@@ -88,11 +89,13 @@ class FaceRecognizer(context: Context) {
         return channel.map(FileChannel.MapMode.READ_ONLY, afd.startOffset, afd.declaredLength)
     }
 
-    /** Rasmdan eng katta yuzni topib, uning embedding'ini qaytaradi (yuz yo'q bo'lsa null). */
+    /** Rasmdan eng katta yuzni topib, uning embedding'ini qaytaradi (yuz yo'q bo'lsa null).
+     *  Yuz topilmasa, kadrni 90/270/180° aylantirib ham urinadi (har qanday holatga chidamli). */
     fun embedLargestFace(bitmap: Bitmap): FloatArray? {
         val itp = interpreter ?: return null
-        val rect = detectLargestFaceRect(bitmap) ?: return null
-        val face = cropSafely(bitmap, rect)
+        val found = findFaceAnyOrientation(bitmap) ?: return null
+        val (oriented, rect) = found
+        val face = cropSafely(oriented, rect)
         val scaled = Bitmap.createScaledBitmap(face, inputSize, inputSize, true)
 
         val input = buildInputBuffer(scaled)
@@ -140,6 +143,21 @@ class FaceRecognizer(context: Context) {
         if (pDist > threshold && bestChildDist > threshold) return RecResult(Kind.UNKNOWN)
         return if (pDist <= bestChildDist) RecResult(Kind.PARENT)
         else RecResult(Kind.CHILD, bestChild?.id, bestChild?.name)
+    }
+
+    /** Yuzni to'g'ri, so'ng 90/270/180° aylantirib izlaydi. Topilса — (to'g'rilangan rasm, yuz joyi). */
+    private fun findFaceAnyOrientation(bitmap: Bitmap): Pair<Bitmap, Rect>? {
+        for (deg in intArrayOf(0, 90, 270, 180)) {
+            val b = if (deg == 0) bitmap else rotateBitmap(bitmap, deg)
+            val rect = detectLargestFaceRect(b)
+            if (rect != null) return Pair(b, rect)
+        }
+        return null
+    }
+
+    private fun rotateBitmap(src: Bitmap, deg: Int): Bitmap {
+        val m = Matrix().apply { postRotate(deg.toFloat()) }
+        return Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
     }
 
     private fun detectLargestFaceRect(bitmap: Bitmap): Rect? {
