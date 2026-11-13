@@ -47,17 +47,26 @@ jobs:
           echo "Model size: $sz bytes"
           [ "$sz" -gt 1000000 ] || { echo "Model juda kichik"; exit 1; }
 
-      - name: Generate signing keystore
+      - name: Prepare signing keystore
+        id: signing
+        env:
+          KS_B64: ${{ secrets.CG_KEYSTORE_B64 }}
         run: |
-          keytool -genkeypair -v \
-            -keystore "$RUNNER_TEMP/childguard.jks" \
-            -storepass childguard -keypass childguard -alias childguard \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=ChildGuard, OU=Dev, O=ChildGuard, L=NA, ST=NA, C=UZ"
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/childguard.jks"
+            echo "Doimiy keystore (secret) ishlatildi"
+          else
+            keytool -genkeypair -v -keystore "$RUNNER_TEMP/childguard.jks" \
+              -storepass childguard -keypass childguard -alias childguard \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=ChildGuard, OU=Dev, O=ChildGuard, L=NA, ST=NA, C=UZ"
+            echo "Secret yo'q — vaqtinchalik keystore yaratildi"
+          fi
+          echo "ks=$RUNNER_TEMP/childguard.jks" >> "$GITHUB_OUTPUT"
 
       - name: Build signed release APK
         env:
-          CG_KEYSTORE: ${{ runner.temp }}/childguard.jks
+          CG_KEYSTORE: ${{ steps.signing.outputs.ks }}
           CG_STORE_PW: childguard
           CG_KEY_ALIAS: childguard
           CG_KEY_PW: childguard
