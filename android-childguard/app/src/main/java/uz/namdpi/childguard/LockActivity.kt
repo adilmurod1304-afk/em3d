@@ -108,11 +108,11 @@ class LockActivity : AppCompatActivity() {
 
     private fun checkParent(proxy: androidx.camera.core.ImageProxy) {
         if (!recognizer.isModelLoaded) return
-        val result = recognizer.recognize(proxy.toUprightBitmap())
-        if (result.kind == FaceRecognizer.Kind.PARENT) {
+        // QAT'IY: faqat ota-ona aniq tanilsa (bola yuzi ochmaydi)
+        if (recognizer.isConfidentParent(proxy.toUprightBitmap())) {
             parentStreak++
-            // Xatodan saqlanish uchun ketma-ket 2 marta tasdiqlansin
-            if (parentStreak >= 2) {
+            // Xatodan saqlanish uchun ketma-ket 3 marta tasdiqlansin
+            if (parentStreak >= 3) {
                 runOnUiThread { unlock() }
             }
         } else {

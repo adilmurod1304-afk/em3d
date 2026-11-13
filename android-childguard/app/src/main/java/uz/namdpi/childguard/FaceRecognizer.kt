@@ -160,6 +160,26 @@ class FaceRecognizer(context: Context) {
         return Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
     }
 
+    /**
+     * Blokni ochish uchun QAT'IY ota-ona tekshiruvi.
+     * Faqat yuz ota-onага aniq yaqin (UNLOCK_MAX_DIST ichida) VA eng yaqin boladan
+     * kamida MARGIN masofा uzoq bo'lsagina true qaytaradi — shunda bola yuzi blokни ochmaydi.
+     */
+    fun isConfidentParent(bitmap: Bitmap): Boolean {
+        if (interpreter == null) return false
+        val emb = embedLargestFace(bitmap) ?: return false
+        val parents = Profiles.loadParent(appCtx)
+        if (parents.isEmpty()) return false
+
+        val pDist = minDistance(emb, parents)
+        var cDist = Float.MAX_VALUE
+        for (c in Profiles.listChildren(appCtx)) {
+            val d = minDistance(emb, c.embeddings)
+            if (d < cDist) cDist = d
+        }
+        return pDist <= UNLOCK_MAX_DIST && (pDist + UNLOCK_MARGIN) < cDist
+    }
+
     private fun detectLargestFaceRect(bitmap: Bitmap): Rect? {
         val image = InputImage.fromBitmap(bitmap, 0)
         return try {
@@ -244,5 +264,8 @@ class FaceRecognizer(context: Context) {
 
     companion object {
         const val MODEL_NAME = "mobile_face_net.tflite"
+        // Blokni ochish qat'iyligi (L2-normallashgan embedding'lar uchun Evklid masofa).
+        const val UNLOCK_MAX_DIST = 1.0f   // ota-ona shu masofadan yaqin bo'lishi shart
+        const val UNLOCK_MARGIN = 0.15f    // bola(lar)dan shuncha aniq uzoq bo'lishi shart
     }
 }
