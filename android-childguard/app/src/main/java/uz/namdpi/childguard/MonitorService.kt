@@ -21,26 +21,34 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import java.util.concurrent.Executors
 
 /**
- * Fon xizmat: old kamera orqali vaqti-vaqti bilan yuzni tekshiradi.
- * Bola (ota-ona emas) yuzi aniqlansa — vaqt to'planadi; chegaradan oshsa, butun
- * ekranni egallovchi OVERLAY (ustidan chiziladigan oyna) chiqadi — u YouTube kabi
- * boshqa ilovalar ustida ham ko'rinadi. Blok faqat ota-ona yuzi yoki PIN bilan ochiladi.
+ * Fon xizmat: old kamera orqali kim foydalanayotganини aniqlaydi.
+ *  - Ota-ona yoki vaqti HALI BOR bola → ruxsat (blok yopiladi).
+ *  - Vaqti TUGAGAN bola → o'sha paytда overlay blok chiqadi (YouTube ustида ham).
+ * Har bir bolaning vaqti alohida; blok butun qurilma uchun emas, HOZIR kim
+ * foydalanayotganига qarab ko'rsatiladi/yopiladi.
  */
 class MonitorService : LifecycleService() {
 
     private lateinit var recognizer: FaceRecognizer
     private val analysisExecutor = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    private var cameraProvider: ProcessCameraProvider? = null
-    private var overlayView: View? = null
-    private var parentStreak = 0
 
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var analysis: ImageAnalysis? = null
+
+    private var overlayView: View? = null
+    private var overlayPreview: PreviewView? = null
+
+    @Volatile private var blocked = false
+    private var permitStreak = 0
     @Volatile private var lastTick = 0L
 
     override fun onCreate() {
@@ -60,29 +68,46 @@ class MonitorService : LifecycleService() {
         val future = ProcessCameraProvider.getInstance(this)
         future.addListener({
             try {
-                val provider = future.get()
-                cameraProvider = provider
-
-                val analysis = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                    .build()
-                analysis.setAnalyzer(analysisExecutor) { proxy ->
-                    try {
-                        processFrame(proxy)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "analyze error", e)
-                    } finally {
-                        proxy.close()
-                    }
+                cameraProvider = future.get()
+                if (analysis == null) {
+                    analysis = ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                        .build().also { a ->
+                            a.setAnalyzer(analysisExecutor) { proxy ->
+                                try {
+                                    processFrame(proxy)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "analyze error", e)
+                                } finally {
+                                    proxy.close()
+                                }
+                            }
+                        }
                 }
-
-                provider.unbindAll()
-                provider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, analysis)
+                bindCamera(if (overlayView != null) overlayPreview else null)
             } catch (e: Exception) {
                 Log.e(TAG, "camera start failed", e)
             }
         }, androidx.core.content.ContextCompat.getMainExecutor(this))
+    }
+
+    /** Kamerani ulaydi: tahlil + (kerak bo'lsa) blok ekrani uchun jonli ko'rinish. */
+    private fun bindCamera(previewView: PreviewView?) {
+        val provider = cameraProvider ?: return
+        val a = analysis ?: return
+        try {
+            provider.unbindAll()
+            if (previewView != null) {
+                val preview = Preview.Builder().build()
+                preview.setSurfaceProvider(previewView.surfaceProvider)
+                provider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, a, preview)
+            } else {
+                provider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, a)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "bindCamera failed", e)
+        }
     }
 
     private fun processFrame(proxy: androidx.camera.core.ImageProxy) {
@@ -92,52 +117,47 @@ class MonitorService : LifecycleService() {
         lastTick = now
 
         if (!Prefs.isGuardEnabled(this)) { main.post { hideOverlay() }; return }
+        if (now < Prefs.getGraceUntil(this)) { main.post { hideOverlay() }; return }
 
         val bitmap = proxy.toUprightBitmap()
+        val result = recognizer.monitorClassify(bitmap)   // eng yaqin g'alaba qiladi
 
-        // Bloklangan holat: overlay ko'rinib tursin; faqat ota-ona ANIQ tanilsa ochiladi.
-        if (Prefs.isLocked(this)) {
-            main.post { showOverlay() }
-            if (recognizer.isConfidentParent(bitmap)) {
-                parentStreak++
-                if (parentStreak >= 2) doUnlock()
-            } else {
-                parentStreak = 0
+        when (result.kind) {
+            FaceRecognizer.Kind.CHILD -> {
+                val id = result.childId ?: return
+                val delta = if (prevTick == 0L) TICK_MS else (now - prevTick).coerceAtMost(TICK_MS * 2)
+                Prefs.addChildUsedMillis(this, id, delta)
+
+                val usedMs = Prefs.getChildUsedMillis(this, id)
+                val limit = Prefs.getLimitMinutes(this)
+                updateNotification(
+                    getString(R.string.guard_status, result.childName ?: "?", (usedMs / 60_000L).toInt(), limit)
+                )
+                if (usedMs >= limit * 60_000L) {
+                    // Shu bola vaqtini tugatgan → blok
+                    permitStreak = 0
+                    Prefs.setLockedChild(this, id, result.childName ?: "")
+                    if (!blocked) main.post { showOverlay() }
+                } else {
+                    permit()   // vaqti bor bola → ruxsat
+                }
             }
-            return
-        }
-        parentStreak = 0
-
-        if (now < Prefs.getGraceUntil(this)) return   // ochilgandan keyingi muhlat
-
-        val result = recognizer.monitorClassify(bitmap)
-        if (result.kind == FaceRecognizer.Kind.CHILD && result.childId != null) {
-            val delta = if (prevTick == 0L) TICK_MS else (now - prevTick).coerceAtMost(TICK_MS * 2)
-            Prefs.addChildUsedMillis(this, result.childId, delta)
-
-            val usedMs = Prefs.getChildUsedMillis(this, result.childId)
-            val limit = Prefs.getLimitMinutes(this)
-            updateNotification(
-                getString(R.string.guard_status, result.childName ?: "?", (usedMs / 60_000L).toInt(), limit)
-            )
-            if (usedMs >= limit * 60_000L) lockNow(result.childId, result.childName ?: "")
+            FaceRecognizer.Kind.PARENT -> permit()   // ota-ona → ruxsat
+            else -> { /* NO_FACE / UNKNOWN: holatni o'zgartirmaymiz */ }
         }
     }
 
-    private fun lockNow(childId: String, childName: String) {
-        Prefs.setLocked(this, true)
-        Prefs.setLockedChild(this, childId, childName)
-        main.post { showOverlay() }
+    /** Ruxsat berilgan foydalanuvchi (ota-ona yoki vaqti bor bola) — blokni yopadi. */
+    private fun permit() {
+        if (!blocked) return
+        permitStreak++
+        if (permitStreak >= 2) {   // xatodan saqlanish uchun 2 ta kadr
+            permitStreak = 0
+            main.post { hideOverlay() }
+        }
     }
 
-    private fun doUnlock() {
-        Prefs.setLocked(this, false)
-        Prefs.setGraceUntil(this, System.currentTimeMillis() + GRACE_MS)
-        parentStreak = 0
-        main.post { hideOverlay() }
-    }
-
-    // ---------- Overlay (ustidan chiziladigan blok oynasi) ----------
+    // ---------- Overlay blok oynasi ----------
 
     private fun showOverlay() {
         if (overlayView != null) return
@@ -155,7 +175,7 @@ class MonitorService : LifecycleService() {
             val msg = v.findViewById<TextView>(R.id.overlayMsg)
             v.findViewById<Button>(R.id.overlayUnlock).setOnClickListener {
                 if (pinField.text?.toString().orEmpty() == Prefs.getParentPin(this)) {
-                    doUnlock()
+                    pinUnlock()
                 } else {
                     msg.text = getString(R.string.wrong_pin)
                     pinField.text?.clear()
@@ -179,7 +199,12 @@ class MonitorService : LifecycleService() {
             )
             lp.gravity = Gravity.TOP or Gravity.START
             wm.addView(v, lp)
+
             overlayView = v
+            overlayPreview = v.findViewById<PreviewView>(R.id.overlayPreview)
+            blocked = true
+            Prefs.setLocked(this, true)
+            bindCamera(overlayPreview)   // blok ekranida jonli kamera
         } catch (e: Exception) {
             Log.e(TAG, "overlay failed — fallback activity", e)
             try {
@@ -193,11 +218,21 @@ class MonitorService : LifecycleService() {
     }
 
     private fun hideOverlay() {
+        blocked = false
+        Prefs.setLocked(this, false)
         val v = overlayView ?: return
         try {
             (getSystemService(Context.WINDOW_SERVICE) as WindowManager).removeView(v)
         } catch (_: Exception) { }
         overlayView = null
+        overlayPreview = null
+        bindCamera(null)
+    }
+
+    private fun pinUnlock() {
+        Prefs.setGraceUntil(this, System.currentTimeMillis() + GRACE_MS)
+        permitStreak = 0
+        hideOverlay()
     }
 
     // ---------- Bildirishnoma ----------

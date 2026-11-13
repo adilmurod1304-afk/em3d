@@ -37,10 +37,23 @@
         android:textColor="#98A1B3"
         android:textSize="14sp" />
 
+    <FrameLayout
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_chip">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/overlayPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:implementationMode="compatible" />
+    </FrameLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="20dp"
         android:text="@string/use_pin"
         android:textColor="#98A1B3"
         android:textSize="13sp" />
